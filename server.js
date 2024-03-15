@@ -3,10 +3,10 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Define middleware to parse JSON requests
 app.use(express.json());
 
-// Route to retrieve processed data with pagination
+// Route to fetch processed data with pagination
+// Eg: GET localhost:3000?page=3
 app.get('/data', (req, res) => {
   const page = parseInt(req.query.page) || 1;  // Get page number from query parameter, default to 1
   const pageSize = 10;  // Number of items per page
@@ -44,6 +44,7 @@ app.get('/data', (req, res) => {
 });
 
 // Route to retrieve specific data by ID
+// Eg: POST localhost:3000/20
 app.post('/data/:id', (req, res) => {
   const id = req.params.id; // Extract the ID parameter from the request
 
@@ -57,12 +58,11 @@ app.post('/data/:id', (req, res) => {
       // Parse the data into an array of objects
       const rows = data.trim().split('\n');
       const header = rows[0].split(',');
-      const columnIndex = header.indexOf('id'); // Assuming 'id' is the identifier column
+      const columnIndex = header.indexOf('id');
 
-      // Initialize specific data as null
       let specificData = null;
 
-      // Loop through each row to find the specific data by ID
+      // Iterate through each row of the data and set the specificData with corresponding row having requested ID
       for (let i = 1; i < rows.length; i++) {
           const values = rows[i].split(',');
           if (values[columnIndex] === id) {
@@ -71,7 +71,7 @@ app.post('/data/:id', (req, res) => {
               header.forEach((key, index) => {
                   specificData[key] = values[index];
               });
-              break; // Exit the loop once specific data is found
+              break; // Exit the loop if data is found
           }
       }
 
@@ -85,6 +85,7 @@ app.post('/data/:id', (req, res) => {
 });
 
 // Route to update existing data in the dataset
+// Eg: PUT localhost:3000/20 and add body
 app.put('/data/:id', (req, res) => {
   const id = req.params.id; // Extract the ID parameter from the request
   const updatedColumns = req.body; // Extract the updated columns and their values from the request body
@@ -115,12 +116,13 @@ app.put('/data/:id', (req, res) => {
           return res.status(404).json({ error: 'Data not found' });
       }
 
-      // Update the specified columns for the data with the specified ID
+      // Update the specified column for the data with the unique ID
       console.log("Before: ", processedData[dataIndex])
       Object.keys(updatedColumns).forEach(column => {
           processedData[dataIndex][column] = updatedColumns[column];
       });
       console.log("After:", processedData[dataIndex])
+
       // Convert the updated data back to CSV format
       const updatedCSV = [header.join(',')].concat(processedData.map(item => Object.values(item).join(','))).join('\n');
 
@@ -139,6 +141,7 @@ app.put('/data/:id', (req, res) => {
 
 
 // Route to delete existing data in the dataset
+// Eg: DELETE localhost:3000/20
 app.delete('/data/:id', (req, res) => {
     const id = req.params.id; // Extract the ID parameter from the request
 
