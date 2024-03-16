@@ -54,7 +54,7 @@ pip install -r requirements.txt
 ## Usage
 
 - Ensure the dataset file 'UNSW_NB15_training-set.csv' is placed in the same directory as the script.
-- Run the script 'data_processing_script.py' to perform data cleaning, transformation, analysis, and generate insights.
+- Run the script 'cleaning_preprocessing.ipynb' to perform data cleaning, transformation, analysis, and generate insights.
 
 ## Purpose of Python Code Sections
 
