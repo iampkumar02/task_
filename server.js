@@ -6,188 +6,110 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Route to fetch processed data with pagination
-// Eg: GET localhost:3000?page=3
-app.get('/data', (req, res) => {
-  const page = parseInt(req.query.page) || 1;  // Get page number from query parameter, default to 1
-  const pageSize = 10;  // Number of items per page
+// Example: POST localhost:3000?page=3
+app.post('/data', (req, res) => {
+    const page = parseInt(req.query.page) || 1;  // Get page number from query parameter, default to 1
+    const pageSize = 10;  // Number of items per page
+  
+    // Extract data from the request body sent by Python
+    const receivedData = req.body.data;
+    // Parse JSON string into JavaScript object
+    const jsonDataArray = JSON.parse(receivedData);
 
-  // Read the processed data from the file
-  fs.readFile('cleaned_data.csv', 'utf8', (err, data) => {
-      if (err) {
-          console.error('Error reading processed data:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-      }
-
-      // Parse CSV data into an array of rows
-      const rows = data.trim().split('\n').slice(1); // Skip header row
-      const totalItems = rows.length;
-
-      // Calculate pagination offsets
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = Math.min(startIndex + pageSize, totalItems);
-
-      // Extract data for the current page
-      const currentPageData = rows.slice(startIndex, endIndex);
-
-      // Prepare response object with pagination metadata
-      const responseData = {
-          currentPage: page,
-          totalPages: Math.ceil(totalItems / pageSize),
-          pageSize: pageSize,
-          totalItems: totalItems,
-          data: currentPageData
-      };
-
-      // Send response
-      res.json(responseData);
-  });
+    // Count the total number of rows
+    const rowCount = jsonDataArray.length;
+    console.log('Total number of rows:', rowCount);
+  
+    // Calculate pagination offsets
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, rowCount);
+  
+    // Extract data for the current page
+    const currentPageData = jsonDataArray.slice(startIndex, endIndex);
+  
+    // Prepare response object with pagination metadata
+    const responseData = {
+      currentPage: page,
+      totalPages: Math.ceil(rowCount / pageSize),
+      pageSize: pageSize,
+      totalItems: rowCount,
+      data: currentPageData
+    };
+  
+    // Send response
+    res.json(responseData);
 });
-
+ 
 // Route to retrieve specific data by ID
-// Eg: POST localhost:3000/20
+// Example: POST localhost:3000/data/20
 app.post('/data/:id', (req, res) => {
-  const id = req.params.id; // Extract the ID parameter from the request
+    const id = parseInt(req.params.id); // Convert parameter to integer
 
-  // Read the processed data from the file
-  fs.readFile('cleaned_data.csv', 'utf8', (err, data) => {
-      if (err) {
-          console.error('Error reading processed data:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-      }
+    // Extract data from the request body sent by Python
+    const receivedData = req.body.data;
 
-      // Parse the data into an array of objects
-      const rows = data.trim().split('\n');
-      const header = rows[0].split(',');
-      const columnIndex = header.indexOf('id');
+    // Parse JSON string into JavaScript object
+    const jsonDataArray = JSON.parse(receivedData);
 
-      let specificData = null;
+    // Find the object with the matching ID (convert ID to string for comparison)
+    const specificData = jsonDataArray.find(obj => obj.id.toString() === id.toString());
 
-      // Iterate through each row of the data and set the specificData with corresponding row having requested ID
-      for (let i = 1; i < rows.length; i++) {
-          const values = rows[i].split(',');
-          if (values[columnIndex] === id) {
-              // Found the specific data
-              specificData = {};
-              header.forEach((key, index) => {
-                  specificData[key] = values[index];
-              });
-              break; // Exit the loop if data is found
-          }
-      }
-
-      if (!specificData) {
-          return res.status(404).json({ error: 'Data not found' });
-      }
-
-      // Send the specific data as a JSON response
-      res.json(specificData);
-  });
+    if (specificData) {
+        res.json(specificData);
+    } else {
+        res.status(404).json({ error: 'Data not found' });
+    }
 });
 
 // Route to update existing data in the dataset
-// Eg: PUT localhost:3000/20 and add body
+// Example: PUT localhost:3000/20 and add body
 app.put('/data/:id', (req, res) => {
-  const id = req.params.id; // Extract the ID parameter from the request
-  const updatedColumns = req.body; // Extract the updated columns and their values from the request body
+    const id = parseInt(req.params.id); // Convert ID to a number
+    const updatedColumns = req.body.to_change; // Extract the updated columns and their values from the request body
 
-  // Read the existing data from the file
-  fs.readFile('cleaned_data.csv', 'utf8', (err, data) => {
-      if (err) {
-          console.error('Error reading processed data:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-      }
+    // Extract the received data from the request body sent by Python
+    const receivedData = req.body.data;
+    // Parse JSON string into JavaScript object
+    const jsonDataArray = JSON.parse(receivedData);
 
-      // Parse the data into an array of objects
-      const rows = data.trim().split('\n');
-      const header = rows[0].split(',');
-      const processedData = rows.slice(1).map(row => {
-          const values = row.split(',');
-          const obj = {};
-          header.forEach((key, index) => {
-              obj[key] = values[index];
-          });
-          return obj;
-      });
+    // Find the index of the data with the specified ID
+    const dataIndex = jsonDataArray.findIndex(item => item.id === id);
 
-      // Find the index of the data with the specified ID
-      const dataIndex = processedData.findIndex(item => item.id === id);
+    if (dataIndex === -1) {
+        return res.status(404).json({ error: 'Data not found' });
+    }
 
-      if (dataIndex === -1) {
-          return res.status(404).json({ error: 'Data not found' });
-      }
+    // Update the specified column for the data with the unique ID
+    Object.keys(updatedColumns).forEach(column => {
+        jsonDataArray[dataIndex][column] = updatedColumns[column];
+    });
 
-      // Update the specified column for the data with the unique ID
-      console.log("Before: ", processedData[dataIndex])
-      Object.keys(updatedColumns).forEach(column => {
-          processedData[dataIndex][column] = updatedColumns[column];
-      });
-      console.log("After:", processedData[dataIndex])
-
-      // Convert the updated data back to CSV format
-      const updatedCSV = [header.join(',')].concat(processedData.map(item => Object.values(item).join(','))).join('\n');
-
-      // Write the updated data back to the file
-      fs.writeFile('cleaned_data.csv', updatedCSV, 'utf8', (err) => {
-          if (err) {
-              console.error('Error writing processed data:', err);
-              return res.status(500).json({ error: 'Internal Server Error' });
-          }
-
-          // Send a success response
-          res.json({ message: 'Data updated successfully' });
-      });
-  });
+    // Send a success response
+    res.json({ message: 'Data updated successfully', data: jsonDataArray[dataIndex] });
 });
 
-
 // Route to delete existing data in the dataset
-// Eg: DELETE localhost:3000/20
+// Example: DELETE localhost:3000/20
 app.delete('/data/:id', (req, res) => {
-    const id = req.params.id; // Extract the ID parameter from the request
+    const id = parseInt(req.params.id); // Convert parameter to integer
 
-    // Read the existing data from the file
-    fs.readFile('cleaned_data.csv', 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading processed data:', err);
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
+    // Extract data from the request body sent by Python
+    const receivedData = req.body.data;
 
-        // Parse the data into an array of objects
-        const rows = data.trim().split('\n');
-        const header = rows[0].split(',');
-        const processedData = rows.slice(1).map(row => {
-            const values = row.split(',');
-            const obj = {};
-            header.forEach((key, index) => {
-                obj[key] = values[index];
-            });
-            return obj;
-        });
+    // Parse JSON string into JavaScript object
+    const jsonDataArray = JSON.parse(receivedData);
 
-        // Find the index of the data with the specified ID
-        const dataIndex = processedData.findIndex(item => item.id === id);
+    // Find the index of the data with the specified ID
+    const dataIndex = jsonDataArray.findIndex(item => item.id === id);
+    if (dataIndex === -1) {
+        return res.status(404).json({ error: 'Data not found' });
+    }
 
-        if (dataIndex === -1) {
-            return res.status(404).json({ error: 'Data not found' });
-        }
+    // Remove the data item with the specified ID from the array
+    jsonDataArray.splice(dataIndex, 1);
 
-        // Remove the data with the specified ID from the array
-        processedData.splice(dataIndex, 1);
-
-        // Convert the updated data back to CSV format
-        const updatedCSV = [header.join(',')].concat(processedData.map(item => Object.values(item).join(','))).join('\n');
-
-        // Write the updated data back to the file
-        fs.writeFile('cleaned_data.csv', updatedCSV, 'utf8', (err) => {
-            if (err) {
-                console.error('Error writing processed data:', err);
-                return res.status(500).json({ error: 'Internal Server Error' });
-            }
-
-            // Send a success response
-            res.json({ message: 'Data deleted successfully' });
-        });
-    });
+    // Send a success response with the updated jsonDataArray
+    res.json({ message: 'Data deleted successfully', data: jsonDataArray });
 });
 
 
