@@ -15,6 +15,7 @@ The dataset used in this project is the UNSW-NB15 dataset, which contains networ
 ### Installation
 ```bash
 pip install -r requirements.txt
+```
 
 # Python Data Processing Script
 
@@ -66,6 +67,7 @@ pip install -r requirements.txt
 
 ```bash
 npm install
+```
 
 # Usage
 
