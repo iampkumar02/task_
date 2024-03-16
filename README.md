@@ -1,9 +1,42 @@
 # Data Processing and API Documentation
 
 ## Dataset
-The dataset used in this project is the UNSW-NB15 dataset, which contains network traffic data for cybersecurity analysis. It includes various features such as duration, protocol, service, state, and attack categories. The dataset is provided in CSV format.
 
-## Python Data Processing Script
+The dataset used in this project is the UNSW-NB15 dataset, which contains network traffic data for cybersecurity analysis. It includes various features such as duration, protocol, service, state, and attack categories. 
+
+You can download the dataset from the following link:
+
+[UNSW-NB15 Dataset](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
+
+The dataset is provided in CSV format.
+
+# Express.js Server
+
+## Requirements
+
+- Node.js
+- express
+
+## Installation
+
+```bash
+npm install
+```
+
+## Usage
+
+- Run the command `node server.js` to start the Express.js server.
+- The server will listen on port 3000 by default.
+
+## Purpose of Server Code Sections
+
+- Set up an Express.js server to serve as the REST API backend.
+- Define routes and endpoints to expose the processed data.
+- Implement appropriate HTTP methods (GET, POST, PUT, DELETE) for interacting with the data.
+
+
+# Python Data Processing Script
+
 ### Requirements
 - Python 3.11.8
 - pandas 2.2.1
@@ -12,13 +45,12 @@ The dataset used in this project is the UNSW-NB15 dataset, which contains networ
 - matplotlib 3.8.3
 - scikit-learn 1.4.1.post1
 
+
+
 ### Installation
 ```bash
 pip install -r requirements.txt
 ```
-
-# Python Data Processing Script
-
 ## Usage
 
 - Ensure the dataset file 'UNSW_NB15_training-set.csv' is placed in the same directory as the script.
@@ -54,31 +86,6 @@ pip install -r requirements.txt
   - The `put_data(id_to_update, update_data)` function updates data on the Express.js server using a PUT request for the specified ID with the provided update data.
 - **Deleting Data:** 
   - The `delete_data(id)` function deletes data on the Express.js server using a DELETE request for the specified ID.
-
-
-# Express.js Server
-
-## Requirements
-
-- Node.js
-- express
-
-## Installation
-
-```bash
-npm install
-```
-
-# Usage
-
-- Run the command `node server.js` to start the Express.js server.
-- The server will listen on port 3000 by default.
-
-# Purpose of Server Code Sections
-
-- Set up an Express.js server to serve as the REST API backend.
-- Define routes and endpoints to expose the processed data.
-- Implement appropriate HTTP methods (GET, POST, PUT, DELETE) for interacting with the data.
 
 
 # Additional Notes
